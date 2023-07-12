@@ -54,6 +54,10 @@ wss.on('connection', function connection(ws: CustomWebSocket, req) {
 
         break;
       }
+
+      case 'add_ships': {
+        messageHandler.handleAddShips(message);
+      }
     }
   });
 });

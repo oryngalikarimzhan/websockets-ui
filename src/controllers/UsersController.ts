@@ -4,27 +4,25 @@ import { CustomWebSocket, SocketMessage } from '../app/utils';
 import { User } from '../models/User';
 import { usersDB } from '../db/inMemoryDB';
 
-export class PlayersController {
+export class UsersController {
+  usersCounter = 1;
+
   registerUser({ data, ...rest }: SocketMessage, ws: CustomWebSocket) {
     const user = JSON.parse(data) as User;
 
     const { name } = user;
 
-    if (!usersDB.find((userItem) => userItem.name === name)) {
-      usersDB.push({ name, user, wins: 0 });
+    if (!usersDB.find(({ user }) => user.name === name)) {
+      usersDB.push({ user, wins: 0 });
 
       ws.userName = name;
-
-      const index = usersDB.findIndex(
-        (userItem) => userItem.user.name === name,
-      );
 
       ws.send(
         JSON.stringify({
           ...rest,
           data: JSON.stringify({
             name,
-            index,
+            index: this.usersCounter++,
             error: false,
             errorText: '',
           }),
@@ -48,7 +46,7 @@ export class PlayersController {
   sendWinners(wss: WebSocketServer) {
     const winnersList = usersDB
       .filter(({ wins }) => wins > 0)
-      .map(({ name, wins }) => ({
+      .map(({ user: { name }, wins }) => ({
         name,
         wins,
       }));

@@ -1,9 +1,6 @@
-import { CustomWebSocket } from '../app/utils';
+import { Player } from '../models/Player';
 import { User } from '../models/User';
 
-export const usersDB: { name: string; user: User; wins: number }[] = [];
+export const usersDB: { user: User; wins: number }[] = [];
 
-export const roomsDB: {
-  roomId: number;
-  roomUsers: { index: number; ws: CustomWebSocket }[];
-}[] = [];
+export const gameRoomsDB = new Map<number, Player[]>();
