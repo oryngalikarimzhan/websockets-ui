@@ -39,24 +39,27 @@ wss.on('connection', function connection(ws: CustomWebSocket, req) {
     switch (message.type) {
       case 'reg': {
         messageHandler.handleReg(ws, message);
-
         break;
       }
 
       case 'create_room': {
         messageHandler.handleCreateRoom(ws);
-
         break;
       }
 
       case 'add_user_to_room': {
         messageHandler.handleAddUserToRoom(ws, message);
-
         break;
       }
 
       case 'add_ships': {
         messageHandler.handleAddShips(message);
+        break;
+      }
+
+      case 'attack': {
+        // messageHandler.handleAttack(message);
+        break;
       }
     }
   });

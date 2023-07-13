@@ -3,7 +3,8 @@ import { Ship } from './Ship';
 
 export type Player = {
   gameRoomId: number;
-  ships?: Ship[];
   index: number;
   ws: CustomWebSocket;
+  ships?: Ship[];
+  map?: { shipIndex: number; isAttacked: boolean }[][];
 };

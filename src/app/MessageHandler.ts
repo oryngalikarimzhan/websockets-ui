@@ -17,6 +17,10 @@ export class MessageHandler {
     this.usersController.sendWinners(this.wss);
   }
 
+  respondTurn(gameId: number) {
+    this.gameRoomsController.sendTurn(gameId);
+  }
+
   handleReg(ws: CustomWebSocket, message: SocketMessage) {
     this.usersController.registerUser(message, ws);
     this.respondAll();
@@ -35,6 +39,8 @@ export class MessageHandler {
   }
 
   handleAddShips(message: SocketMessage) {
+    const gameId = JSON.parse(message.data).gameId;
     this.gameRoomsController.addPlayerShips(message);
+    this.respondTurn(gameId);
   }
 }

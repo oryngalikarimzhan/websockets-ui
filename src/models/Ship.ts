@@ -6,4 +6,5 @@ export type Ship = {
   direction: boolean;
   length: number;
   type: 'small' | 'medium' | 'large' | 'huge';
+  hp?: number;
 };
