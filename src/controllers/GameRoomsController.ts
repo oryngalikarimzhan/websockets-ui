@@ -48,25 +48,43 @@ export class GameRoomsController {
   }
 
   createNewRoom(ws: CustomWebSocket) {
+    const hasRoom = Object.entries(gameRoomsDB).find(
+      ([, value]) => value.adminUserName === ws.userName,
+    );
+
+    if (hasRoom) return false;
+
     gameRoomsDB[this.roomsCounter] = {
       isStarted: false,
+      adminUserName: ws.userName,
       currentPlayerId: -1,
       players: [{ ws, index: 0, gameRoomId: this.roomsCounter }],
     };
 
     this.roomsCounter++;
+    return true;
   }
 
   addUserToRoom(roomId: number, ws: CustomWebSocket) {
     const roomData = gameRoomsDB[roomId];
 
-    if (!roomData || !roomData.players[0] || roomData.players.length !== 1)
-      return;
+    const players = roomData?.players;
+    const firstPlayer = players?.[0];
+
+    if (
+      !roomData ||
+      !firstPlayer ||
+      players.length !== 1 ||
+      roomData?.adminUserName === ws.userName
+    )
+      return false;
 
     gameRoomsDB[roomId] = {
       ...roomData,
-      players: [roomData.players[0], { ws, index: 1, gameRoomId: roomId }],
+      players: [firstPlayer, { ws, index: 1, gameRoomId: roomId }],
     };
+
+    return true;
   }
 
   addPlayerShips(message: SocketMessage) {
@@ -81,7 +99,7 @@ export class GameRoomsController {
     if (!player) return;
 
     player.ships = data.ships;
-    player.map = this.buildMap(player.ships);
+    player.gameBoard = this.buildGameBoard(player.ships);
 
     if (roomData.players.every((player) => player.ships)) {
       roomData.isStarted = true;
@@ -120,7 +138,7 @@ export class GameRoomsController {
     );
   }
 
-  private buildMap(ships: Ship[] | undefined) {
+  private buildGameBoard(ships: Ship[] | undefined) {
     if (!ships) return;
 
     const map = Array.from({ length: 10 }, () =>

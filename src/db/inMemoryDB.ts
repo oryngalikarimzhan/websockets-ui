@@ -1,11 +1,17 @@
 import { Player } from '../models/Player';
-import { User } from '../models/User';
 
-export const usersDB: { user: User; wins: number }[] = [];
+export const usersDB: {
+  [userName: string]: {
+    name: string;
+    password: string;
+    wins: number;
+  };
+} = {};
 
 export const gameRoomsDB: {
   [gameRoomId: number]: {
     isStarted: boolean;
+    adminUserName: string;
     currentPlayerId: number;
     players: Player[];
   };

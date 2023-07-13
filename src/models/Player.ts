@@ -6,5 +6,5 @@ export type Player = {
   index: number;
   ws: CustomWebSocket;
   ships?: Ship[];
-  map?: { shipIndex: number; isAttacked: boolean }[][];
+  gameBoard?: { shipIndex: number; isAttacked: boolean }[][];
 };

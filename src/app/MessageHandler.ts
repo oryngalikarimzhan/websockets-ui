@@ -27,15 +27,17 @@ export class MessageHandler {
   }
 
   handleCreateRoom(ws: CustomWebSocket) {
-    this.gameRoomsController.createNewRoom(ws);
-    this.respondAll();
+    const isSuccess = this.gameRoomsController.createNewRoom(ws);
+    isSuccess && this.respondAll();
   }
 
   handleAddUserToRoom(ws: CustomWebSocket, message: SocketMessage) {
     const roomId = JSON.parse(message.data).indexRoom;
-    this.gameRoomsController.addUserToRoom(roomId, ws);
-    this.respondAll();
-    this.gameRoomsController.createGame(roomId);
+    const isSuccess = this.gameRoomsController.addUserToRoom(roomId, ws);
+    if (isSuccess) {
+      this.respondAll();
+      this.gameRoomsController.createGame(roomId);
+    }
   }
 
   handleAddShips(message: SocketMessage) {

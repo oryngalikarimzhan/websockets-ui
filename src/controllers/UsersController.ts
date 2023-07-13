@@ -1,19 +1,17 @@
 import { WebSocketServer } from 'ws';
 
 import { CustomWebSocket, SocketMessage } from '../app/utils';
-import { User } from '../models/User';
 import { usersDB } from '../db/inMemoryDB';
 
 export class UsersController {
   usersCounter = 1;
 
   registerUser({ data, ...rest }: SocketMessage, ws: CustomWebSocket) {
-    const user = JSON.parse(data) as User;
-
+    const user = JSON.parse(data);
     const { name } = user;
 
-    if (!usersDB.find(({ user }) => user.name === name)) {
-      usersDB.push({ user, wins: 0 });
+    if (!usersDB[name]) {
+      usersDB[name] = { ...user, wins: 0 };
 
       ws.userName = name;
 
@@ -44,11 +42,11 @@ export class UsersController {
   }
 
   sendWinners(wss: WebSocketServer) {
-    const winnersList = usersDB
-      .filter(({ wins }) => wins > 0)
-      .map(({ user: { name }, wins }) => ({
+    const winnersList = Object.entries(usersDB)
+      .filter(([, value]) => value.wins > 0)
+      .map(([name, value]) => ({
         name,
-        wins,
+        wins: value.wins,
       }));
 
     wss.clients.forEach((client) =>
