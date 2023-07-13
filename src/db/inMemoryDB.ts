@@ -10,7 +10,7 @@ export const usersDB: {
 
 export const gameRoomsDB: {
   [gameRoomId: number]: {
-    isStarted: boolean;
+    gameRoomId: number;
     adminUserName: string;
     currentPlayerId: number;
     players: Player[];

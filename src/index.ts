@@ -58,7 +58,7 @@ wss.on('connection', function connection(ws: CustomWebSocket, req) {
       }
 
       case 'attack': {
-        // messageHandler.handleAttack(message);
+        messageHandler.handleAttack(message);
         break;
       }
     }
