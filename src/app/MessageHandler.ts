@@ -17,12 +17,17 @@ export class MessageHandler {
 
   handleCreateRoom(ws: CustomWebSocket) {
     const isSuccess = this.gameRoomsController.createNewRoom(ws);
-    isSuccess && this.respondAll();
+
+    if (isSuccess) {
+      this.respondAll();
+    }
   }
 
   handleAddUserToRoom(ws: CustomWebSocket, message: SocketMessage) {
     const roomId = JSON.parse(message.data).indexRoom;
+
     const isSuccess = this.gameRoomsController.addUserToRoom(roomId, ws);
+
     if (isSuccess) {
       this.respondAll();
       this.gameRoomsController.createGame(roomId);
@@ -35,6 +40,10 @@ export class MessageHandler {
 
   handleAttack(message: SocketMessage) {
     this.gameRoomsController.makeAttack(message.data);
+  }
+
+  handleRandomAttack(message: SocketMessage) {
+    this.gameRoomsController.makeRandomAttack(message.data);
   }
 
   private respondAll() {

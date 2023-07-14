@@ -181,6 +181,37 @@ export class GameRoomsController {
     this.sendTurn(gameId, status === 'miss' ? opponentPlayerId : undefined);
   }
 
+  makeRandomAttack(dataString: string) {
+    const { gameId, indexPlayer } = JSON.parse(dataString);
+
+    const opponentPlayerId = indexPlayer === 1 ? 0 : 1;
+    const opponent = gameRoomsDB[gameId]?.players?.[opponentPlayerId];
+
+    if (!opponent) return;
+
+    let isValidPosition = false;
+    let x = -1;
+    let y = -1;
+
+    while (!isValidPosition) {
+      const [randomX, randomY] = Array.from({ length: 2 }, () =>
+        Math.round(Math.random() * 9),
+      );
+
+      if (!randomX || !randomY) continue;
+
+      const cell = opponent.gameBoard?.[randomX]?.[randomY];
+
+      if (!cell || cell.isAttacked) continue;
+
+      isValidPosition = true;
+      x = randomX;
+      y = randomY;
+    }
+
+    this.makeAttack(JSON.stringify({ gameId, indexPlayer, x, y }));
+  }
+
   private markKilledShipAround(
     dataRoom: {
       gameRoomId: number;
@@ -199,12 +230,10 @@ export class GameRoomsController {
 
     for (let i = -1; i < ship.length + 1; i++) {
       for (let j = -1; j < 2; j++) {
-        const newX = x + j;
-        const newY = y + i;
+        const newX = ship.direction ? x + j : x + i;
+        const newY = ship.direction ? y + i : y + j;
 
-        const cell = ship.direction
-          ? opponentPlayer.gameBoard?.[x + j]?.[y + i]
-          : opponentPlayer.gameBoard?.[x + i]?.[y + j];
+        const cell = opponentPlayer.gameBoard?.[newX]?.[newY];
 
         if (!cell || cell.isAttacked) continue;
 
@@ -238,6 +267,7 @@ export class GameRoomsController {
     if (!cell || cell.isAttacked) return;
 
     cell.isAttacked = true;
+
     const { shipIndex } = cell;
 
     if (shipIndex === -1) {
