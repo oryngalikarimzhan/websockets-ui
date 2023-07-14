@@ -1,18 +1,9 @@
-import { Player } from '../models/Player';
+import { GameRoom, User } from './models';
 
 export const usersDB: {
-  [userName: string]: {
-    name: string;
-    password: string;
-    wins: number;
-  };
+  [userName: string]: User;
 } = {};
 
 export const gameRoomsDB: {
-  [gameRoomId: number]: {
-    gameRoomId: number;
-    adminUserName: string;
-    currentPlayerId: number;
-    players: Player[];
-  };
+  [gameRoomId: number]: GameRoom;
 } = {};

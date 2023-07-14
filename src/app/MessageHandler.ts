@@ -39,7 +39,12 @@ export class MessageHandler {
   }
 
   handleAttack(message: SocketMessage) {
-    this.gameRoomsController.makeAttack(message.data);
+    const winnerUserName = this.gameRoomsController.makeAttack(message.data);
+
+    if (winnerUserName) {
+      this.usersController.addWinner(winnerUserName);
+      this.respondAll();
+    }
   }
 
   handleRandomAttack(message: SocketMessage) {
@@ -48,6 +53,6 @@ export class MessageHandler {
 
   private respondAll() {
     this.gameRoomsController.sendFreeRooms(this.wss);
-    this.usersController.sendWinners(this.wss);
+    this.usersController.sendWinnersListMessage(this.wss);
   }
 }

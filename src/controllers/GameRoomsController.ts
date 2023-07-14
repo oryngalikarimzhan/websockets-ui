@@ -2,46 +2,34 @@ import { WebSocketServer } from 'ws';
 
 import { CustomWebSocket } from '../app/utils';
 import { gameRoomsDB } from '../db/inMemoryDB';
-import { Ship } from '../models/Ship';
-import { Player } from '../models/Player';
+import { GameRoom, Player, Ship } from '../db/models';
+import { generateMessageText } from '../app/utils';
 
 export class GameRoomsController {
   roomsCounter = 1;
 
   sendFreeRooms(wss: WebSocketServer) {
-    const freeRooms = Object.keys(gameRoomsDB)
-      .filter((id) => gameRoomsDB[+id]?.players.length === 1)
-      .map((id) => ({
+    const freeRooms = Object.entries(gameRoomsDB)
+      .filter(([, gameRoom]) => gameRoom.players.length === 1)
+      .map(([id, gameRoom]) => ({
         roomId: id,
-        roomUsers: gameRoomsDB[+id]?.players.map(
-          ({ ws: { userName }, index }) => ({
-            name: userName,
-            index,
-          }),
-        ),
+        roomUsers: gameRoom.players.map(({ ws: { userName }, index }) => ({
+          name: userName,
+          index,
+        })),
       }));
 
-    wss.clients.forEach((client) =>
-      client.send(
-        JSON.stringify({
-          type: 'update_room',
-          data: JSON.stringify(freeRooms),
-          id: 0,
-        }),
-      ),
-    );
+    wss.clients.forEach((client) => {
+      return client.send(generateMessageText('update_room', freeRooms));
+    });
   }
 
   createGame(roomId: number) {
     gameRoomsDB[roomId]?.players?.forEach(({ ws, index }) =>
       ws.send(
-        JSON.stringify({
-          type: 'create_game',
-          data: JSON.stringify({
-            idGame: roomId,
-            idPlayer: index,
-          }),
-          id: 0,
+        generateMessageText('create_game', {
+          idGame: roomId,
+          idPlayer: index,
         }),
       ),
     );
@@ -49,7 +37,7 @@ export class GameRoomsController {
 
   createNewRoom(ws: CustomWebSocket) {
     const hasRoom = Object.entries(gameRoomsDB).find(
-      ([, value]) => value.adminUserName === ws.userName,
+      ([, gameRoom]) => gameRoom.adminUserName === ws.userName,
     );
 
     if (hasRoom) return;
@@ -58,16 +46,16 @@ export class GameRoomsController {
       gameRoomId: this.roomsCounter,
       adminUserName: ws.userName,
       currentPlayerId: -1,
-      players: [{ ws, index: 0, gameRoomId: this.roomsCounter }],
+      players: [{ ws, index: 0 }],
     };
 
     this.roomsCounter++;
+
     return true;
   }
 
   addUserToRoom(roomId: number, ws: CustomWebSocket) {
     const roomData = gameRoomsDB[roomId];
-
     const players = roomData?.players;
     const firstPlayer = players?.[0];
 
@@ -81,7 +69,7 @@ export class GameRoomsController {
 
     gameRoomsDB[roomId] = {
       ...roomData,
-      players: [firstPlayer, { ws, index: 1, gameRoomId: roomId }],
+      players: [firstPlayer, { ws, index: 1 }],
     };
 
     return true;
@@ -100,17 +88,11 @@ export class GameRoomsController {
     player.gameBoard = this.buildGameBoard(player.ships);
 
     if (players.every((player) => !!player.ships)) {
-      roomData.currentPlayerId = player.index;
-
       players.forEach(({ ws, ships }) =>
         ws.send(
-          JSON.stringify({
-            type: 'start_game',
-            data: JSON.stringify({
-              currentPlayerIndex: player.index,
-              ships,
-            }),
-            id: 0,
+          generateMessageText('start_game', {
+            currentPlayerIndex: player.index,
+            ships,
           }),
         ),
       );
@@ -130,12 +112,8 @@ export class GameRoomsController {
 
     roomData.players.forEach(({ ws }) =>
       ws.send(
-        JSON.stringify({
-          type: 'turn',
-          data: JSON.stringify({
-            currentPlayer: roomData.currentPlayerId,
-          }),
-          id: 0,
+        generateMessageText('turn', {
+          currentPlayer: roomData.currentPlayerId,
         }),
       ),
     );
@@ -144,11 +122,18 @@ export class GameRoomsController {
   makeAttack(dataString: string) {
     const { gameId, indexPlayer, x, y } = JSON.parse(dataString);
     const dataRoom = gameRoomsDB[gameId];
-    const opponentPlayerId = indexPlayer === 1 ? 0 : 1;
     const players = dataRoom?.players;
-    const opponent = players?.[opponentPlayerId];
 
-    if (!dataRoom || dataRoom.currentPlayerId !== indexPlayer || !opponent)
+    const opponentPlayerId = indexPlayer === 1 ? 0 : 1;
+    const opponent = players?.[opponentPlayerId];
+    const currentPlayer = players?.[indexPlayer];
+
+    if (
+      !dataRoom ||
+      dataRoom.currentPlayerId !== indexPlayer ||
+      !opponent ||
+      !currentPlayer
+    )
       return;
 
     const attackResult = this.getAttackResult(opponent, x, y);
@@ -157,26 +142,33 @@ export class GameRoomsController {
 
     const { status, shipIndex } = attackResult;
 
+    let isWin = false;
+
     if (status === 'killed') {
       this.markKilledShipAround(dataRoom, opponent, shipIndex);
+      isWin = !!opponent.ships?.every((ship) => ship.hp === 0);
     }
 
     players.forEach(({ ws }) =>
       ws.send(
-        JSON.stringify({
-          type: 'attack',
-          data: JSON.stringify({
-            position: {
-              x,
-              y,
-            },
-            currentPlayer: indexPlayer,
-            status,
-          }),
-          id: 0,
+        generateMessageText('attack', {
+          position: {
+            x,
+            y,
+          },
+          currentPlayer: indexPlayer,
+          status,
         }),
       ),
     );
+
+    if (isWin) {
+      this.finishGame(players, indexPlayer);
+
+      this.deleteRoom(gameId);
+
+      return currentPlayer.ws.userName;
+    }
 
     this.sendTurn(gameId, status === 'miss' ? opponentPlayerId : undefined);
   }
@@ -212,13 +204,22 @@ export class GameRoomsController {
     this.makeAttack(JSON.stringify({ gameId, indexPlayer, x, y }));
   }
 
+  finishGame(players: Player[], winnerPlayerIndex: number) {
+    players.forEach(({ ws }) => {
+      ws.send(
+        generateMessageText('finish', {
+          winPlayer: winnerPlayerIndex,
+        }),
+      );
+    });
+  }
+
+  deleteRoom(gameId: number) {
+    delete gameRoomsDB?.[gameId];
+  }
+
   private markKilledShipAround(
-    dataRoom: {
-      gameRoomId: number;
-      adminUserName: string;
-      currentPlayerId: number;
-      players: Player[];
-    },
+    dataRoom: GameRoom,
     opponentPlayer: Player,
     shipIndex: number,
   ) {
@@ -241,17 +242,13 @@ export class GameRoomsController {
 
         dataRoom.players.forEach(({ ws }) =>
           ws.send(
-            JSON.stringify({
-              type: 'attack',
-              data: JSON.stringify({
-                position: {
-                  x: newX,
-                  y: newY,
-                },
-                currentPlayer: dataRoom.currentPlayerId,
-                status: 'miss',
-              }),
-              id: 0,
+            generateMessageText('attack', {
+              position: {
+                x: newX,
+                y: newY,
+              },
+              currentPlayer: dataRoom.currentPlayerId,
+              status: 'miss',
             }),
           ),
         );
@@ -288,7 +285,7 @@ export class GameRoomsController {
   private buildGameBoard(ships: Ship[] | undefined) {
     if (!ships) return;
 
-    const map = Array.from({ length: 10 }, () =>
+    const board = Array.from({ length: 10 }, () =>
       Array.from({ length: 10 }, () => ({
         ...{ shipIndex: -1, isAttacked: false },
       })),
@@ -300,7 +297,7 @@ export class GameRoomsController {
       const { x, y } = ship.position;
 
       for (let i = 0; i < ship.length; i++) {
-        const cell = ship.direction ? map[x]?.[y + i] : map[x + i]?.[y];
+        const cell = ship.direction ? board[x]?.[y + i] : board[x + i]?.[y];
 
         if (cell && cell.shipIndex === -1) {
           cell.shipIndex = index;
@@ -308,6 +305,6 @@ export class GameRoomsController {
       }
     });
 
-    return map;
+    return board;
   }
 }

@@ -38,3 +38,11 @@ export function identifyRequestAndLog(req: IncomingMessage) {
     console.log('HTTP Request received');
   }
 }
+
+export function generateMessageText(type: string, data: unknown) {
+  return JSON.stringify({
+    type,
+    data: JSON.stringify(data),
+    id: 0,
+  });
+}
