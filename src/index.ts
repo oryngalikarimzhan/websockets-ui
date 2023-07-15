@@ -66,6 +66,11 @@ wss.on('connection', function connection(ws: CustomWebSocket, req) {
         messageHandler.handleRandomAttack(message);
         break;
       }
+
+      case 'single_play': {
+        messageHandler.handleSinglePlay(ws);
+        break;
+      }
     }
   });
 });

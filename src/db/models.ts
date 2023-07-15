@@ -16,7 +16,8 @@ export type User = {
 
 export type Player = {
   index: number;
-  ws: CustomWebSocket;
+  isBot: boolean;
+  ws?: CustomWebSocket;
   ships?: Ship[];
   gameBoard?: { shipIndex: number; isAttacked: boolean }[][];
 };
