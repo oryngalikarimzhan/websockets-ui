@@ -2,7 +2,7 @@ import 'dotenv/config';
 import WebSocket, { WebSocketServer } from 'ws';
 
 import { httpServer } from './http_server/index';
-import { MessageHandler } from './app/MessageHandler';
+import { WebSocketServerManager } from './app/WebSocketServerManager';
 import {
   CustomWebSocket,
   SocketMessage,
@@ -12,7 +12,7 @@ import {
 
 const HTTP_PORT = +(process.env.HTTP_PORT || 3000);
 export const wss = new WebSocketServer({ server: httpServer });
-const messageHandler = new MessageHandler(wss);
+const serverManager = new WebSocketServerManager(wss);
 
 httpServer.listen(HTTP_PORT, () =>
   console.log(`Start static http server on the ${HTTP_PORT} port!`),
@@ -29,8 +29,8 @@ wss.on('connection', function connection(ws: CustomWebSocket, req) {
     ws.isAlive = true;
   });
 
-  ws.on('close', (code) => {
-    console.log(code);
+  ws.on('close', () => {
+    serverManager.cleanUp(ws);
   });
 
   ws.on('message', (rawMessage: WebSocket.RawData) => {
@@ -38,37 +38,37 @@ wss.on('connection', function connection(ws: CustomWebSocket, req) {
 
     switch (message.type) {
       case 'reg': {
-        messageHandler.handleReg(ws, message);
+        serverManager.handleReg(ws, message);
         break;
       }
 
       case 'create_room': {
-        messageHandler.handleCreateRoom(ws);
+        serverManager.handleCreateRoom(ws);
         break;
       }
 
       case 'add_user_to_room': {
-        messageHandler.handleAddUserToRoom(ws, message);
+        serverManager.handleAddUserToRoom(ws, message);
         break;
       }
 
       case 'add_ships': {
-        messageHandler.handleAddShips(message);
+        serverManager.handleAddShips(message);
         break;
       }
 
       case 'attack': {
-        messageHandler.handleAttack(message);
+        serverManager.handleAttack(message);
         break;
       }
 
       case 'randomAttack': {
-        messageHandler.handleRandomAttack(message);
+        serverManager.handleRandomAttack(message);
         break;
       }
 
       case 'single_play': {
-        messageHandler.handleSinglePlay(ws);
+        serverManager.handleSinglePlay(ws);
         break;
       }
     }

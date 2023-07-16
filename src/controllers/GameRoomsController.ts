@@ -182,7 +182,7 @@ export class GameRoomsController {
     if (isWin) {
       this.finishGame(players, indexPlayer);
 
-      this.deleteRoom(gameId);
+      delete gameRoomsDB?.[gameId];
 
       return opponentPlayer.isBot || currentPlayer.isBot
         ? undefined
@@ -331,8 +331,14 @@ export class GameRoomsController {
     return ships;
   }
 
-  deleteRoom(gameId: number) {
-    delete gameRoomsDB?.[gameId];
+  deleteRoom(ws: CustomWebSocket) {
+    const gameRoom = Object.entries(gameRoomsDB).find(
+      ([, gameRoom]) => gameRoom.adminUserName === ws.userName,
+    )?.[1];
+
+    if (!gameRoom) return;
+
+    delete gameRoomsDB?.[gameRoom.gameRoomId];
   }
 
   private markKilledShipAround(

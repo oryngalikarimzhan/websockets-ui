@@ -4,7 +4,7 @@ import { UsersController } from '../controllers/UsersController';
 import { GameRoomsController } from '../controllers/GameRoomsController';
 import { CustomWebSocket, SocketMessage } from './utils';
 
-export class MessageHandler {
+export class WebSocketServerManager {
   usersController = new UsersController();
   gameRoomsController = new GameRoomsController();
 
@@ -51,6 +51,10 @@ export class MessageHandler {
 
   handleSinglePlay(ws: CustomWebSocket) {
     this.gameRoomsController.createSinglePlayGame(ws);
+  }
+
+  cleanUp(ws: CustomWebSocket) {
+    this.gameRoomsController.deleteRoom(ws);
   }
 
   private respondAll() {
