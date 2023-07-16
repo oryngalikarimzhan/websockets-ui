@@ -8,6 +8,7 @@ export type GameRoom = {
 };
 
 export type User = {
+  index: number;
   name: string;
   password: string;
   ws: CustomWebSocket;

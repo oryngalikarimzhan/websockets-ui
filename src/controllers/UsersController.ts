@@ -12,28 +12,44 @@ export class UsersController {
 
   registerUser({ data, type }: SocketMessage, ws: CustomWebSocket) {
     const userDto = JSON.parse(data);
-    const { name } = userDto;
+    const { name, password } = userDto;
+    const user = usersDB[name];
 
-    if (!usersDB[name]) {
-      usersDB[name] = { ...userDto, ws, wins: 0 };
+    if (!user) {
+      const index = this.usersCounter++;
+      usersDB[name] = { ...userDto, ws, wins: 0, index };
 
       ws.userName = name;
 
       ws.send(
         generateMessageText(type, {
           name,
-          index: this.usersCounter++,
+          index,
           error: false,
           errorText: '',
         }),
       );
     } else {
+      if (user.password !== password) {
+        return ws.send(
+          generateMessageText(type, {
+            name,
+            index: -1,
+            error: true,
+            errorText: 'Password is incorrect',
+          }),
+        );
+      }
+
+      ws.userName = name;
+      user.ws = ws;
+
       ws.send(
         generateMessageText(type, {
           name,
-          index: -1,
-          error: true,
-          errorText: 'The user with this name already exists',
+          index: user.index,
+          error: false,
+          errorText: '',
         }),
       );
     }
