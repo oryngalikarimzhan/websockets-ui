@@ -30,6 +30,17 @@ export class UsersController {
         }),
       );
     } else {
+      if (user.ws.isAlive) {
+        return ws.send(
+          generateMessageText(type, {
+            name,
+            index: -1,
+            error: true,
+            errorText: 'User with this username is already exists',
+          }),
+        );
+      }
+
       if (user.password !== password) {
         return ws.send(
           generateMessageText(type, {

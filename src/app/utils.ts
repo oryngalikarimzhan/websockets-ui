@@ -27,16 +27,14 @@ export const interval = setInterval(function ping() {
   });
 }, 15000);
 
-export function identifyRequestAndLog(req: IncomingMessage) {
-  if (
-    req.headers.upgrade === 'websocket' &&
-    req.headers.connection === 'Upgrade'
-  ) {
-    const webSocketKey = req.headers['sec-websocket-key'];
-    console.log('WebSocket connection established. Key:', webSocketKey);
-  } else {
-    console.log('HTTP Request received');
+export function identifyRequestAndLog({ headers }: IncomingMessage) {
+  if (headers.upgrade === 'websocket' && headers.connection === 'Upgrade') {
+    const webSocketKey = headers['sec-websocket-key'];
+
+    return console.log('WebSocket connection established. Key:', webSocketKey);
   }
+
+  console.log('HTTP Request received');
 }
 
 export function generateMessageText(type: string, data: unknown) {

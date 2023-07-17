@@ -54,7 +54,13 @@ export class WebSocketServerManager {
   }
 
   cleanUp(ws: CustomWebSocket) {
-    this.gameRoomsController.deleteRoom(ws);
+    const winnerUserName = this.gameRoomsController.closeGameRoom(ws);
+    if (winnerUserName) {
+      this.usersController.addWinner(winnerUserName);
+      this.respondAll();
+    }
+    ws.isAlive = false;
+    ws.terminate();
   }
 
   private respondAll() {

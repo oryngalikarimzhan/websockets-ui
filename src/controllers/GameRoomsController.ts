@@ -331,14 +331,21 @@ export class GameRoomsController {
     return ships;
   }
 
-  deleteRoom(ws: CustomWebSocket) {
+  closeGameRoom(ws: CustomWebSocket) {
     const gameRoom = Object.entries(gameRoomsDB).find(
-      ([, gameRoom]) => gameRoom.adminUserName === ws.userName,
+      ([, gameRoom]) =>
+        gameRoom.adminUserName === ws.userName ||
+        gameRoom.players[1]?.ws?.userName === ws.userName,
     )?.[1];
 
     if (!gameRoom) return;
 
+    const winnerPlayerIndex = gameRoom.adminUserName === ws.userName ? 1 : 0;
+    const winnerUserName = gameRoom.players[winnerPlayerIndex]?.ws?.userName;
+    this.finishGame(gameRoom.players, winnerPlayerIndex);
+
     delete gameRoomsDB?.[gameRoom.gameRoomId];
+    return winnerUserName;
   }
 
   private markKilledShipAround(
