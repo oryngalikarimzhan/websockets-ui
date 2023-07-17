@@ -4,7 +4,9 @@
   "description": "Implementation web socket server for battleship game",
   "main": "index.ts",
   "scripts": {
-    "start": "nodemon"
+    "start": "nodemon",
+    "build": "webpack",
+    "start:prod": "npm run build && node dist/server.js"
   },
   "author": "Oryngali Karimzhan",
   "keywords": [],
