@@ -1,31 +1,47 @@
-# RSSchool NodeJS websocket task template
-> Static http server and base task packages. 
-> By default WebSocket client tries to connect to the 3000 port.
+### The server works on port 3000
 
 ## Installation
-1. Clone/download repo
-2. `npm install`
+
+**Before you begin, ensure that you have installed **Node.js(v18 LTS)***
+
+### To install the project locally, follow these steps:
+
+1. Clone the repository:
+
+```
+git clone git@github.com:oryngalikarimzhan/websockets-ui.git
+```
+
+2. Change directory into the project root:
+
+```
+cd websockets-ui
+```
+
+3. Change branch:
+
+```
+git checkout develop
+```
+
+5. Install dependencies:
+
+```
+npm i
+```
 
 ## Usage
-**Development**
 
-`npm run start:dev`
+The following commands are available:
 
-* App served @ `http://localhost:8181` with nodemon
+To start the server in 'development' mode
 
-**Production**
+```
+npm start
+```
 
-`npm run start`
+To start the server in 'production' mode
 
-* App served @ `http://localhost:8181` without nodemon
-
----
-
-**All commands**
-
-Command | Description
---- | ---
-`npm run start:dev` | App served @ `http://localhost:8181` with nodemon
-`npm run start` | App served @ `http://localhost:8181` without nodemon
-
-**Note**: replace `npm` with `yarn` in `package.json` if you use yarn.
+```
+npm run start:prod
+```
